@@ -1,8 +1,8 @@
 export default (url, options = {}) => {
     const { useAuthToken } = useAuth()
+    const config = useRuntimeConfig()
 
-
-    return $fetch(url, {
+    return $fetch(config.public.apiBase + url, {
         ...options,
         headers: {
             ...options.headers,
