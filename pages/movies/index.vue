@@ -12,8 +12,8 @@
     </div>
     
     <div v-else-if="movies && movies.length">
-      <div class="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4"> 
-        <MovieCard v-for="movie in movies" :key="movie.imdbid" :movie="movie" />
+      <div class="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+        <MovieCard v-for="movie in movies" :key="movie.id" :movie="movie" />
       </div>
     </div>
     

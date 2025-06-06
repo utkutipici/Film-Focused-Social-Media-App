@@ -100,14 +100,18 @@
 import useMoviesApi from '~/composables/useMoviesApi'
 
 const route = useRoute();
-const movieId = computed(() => route.params.id as string);
+const movieId = computed(() => Number(route.params.id));
 
 const { getMovieById } = useMoviesApi();
 
 const { data: movieData, pending, error: asyncError } = await useAsyncData(
   `movie-${movieId.value}`,
   async () => {
-    return await getMovieById(movieId.value)
+    const movie = await getMovieById(movieId.value)
+    if (movie && typeof movie.genre === 'string') {
+      movie.genre = movie.genre.split(',').map((g) => g.trim())
+    }
+    return movie
   },
   {
     watch: [movieId]
