@@ -23,28 +23,42 @@ export default () => {
     const postTweet = (formData) => {
         const form = new FormData()
 
-        form.append('text', formData.text)
-        form.append('replyTo', formData.replyTo)
+        form.append('content', formData.text)
 
         formData.mediaFiles.forEach((mediaFile, index) => {
             form.append('media_file_' + index, mediaFile)
         })
 
-        return useFetchApi('/api/user/tweets', {
+        return useFetchApi('/api/posts/create', {
             method: 'POST',
             body: form
         })
     }
 
+    const transformPost = (post) => {
+        return {
+            id: post.id,
+            text: post.content,
+            mediaFiles: post.image_url ? [{ id: 1, url: post.image_url }] : [],
+            createdAt: post.created_at,
+            userId: post.user_id,
+            is_official: post.is_official
+        }
+    }
+
     const getTweets = (params = {}) => {
         return new Promise(async (resolve, reject) => {
             try {
-                const response = await useFetchApi('/api/tweets', {
+                const response = await useFetchApi('/api/posts/', {
                     method: 'GET',
                     params
                 })
 
-                resolve(response)
+                if (response && response.posts) {
+                    resolve({ tweets: response.posts.map(transformPost) })
+                } else {
+                    resolve([])
+                }
             } catch (error) {
                 reject(error)
             }
@@ -54,9 +68,13 @@ export default () => {
     const getTweetById = (tweetId) => {
         return new Promise(async (resolve, reject) => {
             try {
-                const response = await useFetchApi(`/api/tweets/${tweetId}`)
+                const response = await useFetchApi(`/api/posts/${tweetId}`)
 
-                resolve(response)
+                if (response && response.post) {
+                    resolve({ tweet: transformPost(response.post) })
+                } else {
+                    resolve(null)
+                }
             } catch (error) {
                 reject(error)
             }
@@ -66,12 +84,18 @@ export default () => {
     const getUserTweets = (params = {}) => {
         return new Promise(async (resolve, reject) => {
             try {
-                const response = await useFetchApi('/api/user/tweets', {
-                    method: 'GET',
-                    params
+                const username = params.username || useAuth().useAuthUser().value?.username
+                if (!username) throw new Error('Username not provided')
+
+                const response = await useFetchApi(`/api/posts/${username}`, {
+                    method: 'GET'
                 })
 
-                resolve(response)
+                if (response && response.posts) {
+                    resolve({ tweets: response.posts.map(transformPost) })
+                } else {
+                    resolve([])
+                }
             } catch (error) {
                 reject(error)
             }
