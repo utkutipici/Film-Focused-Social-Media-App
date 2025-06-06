@@ -1,5 +1,5 @@
 <template>
- <NuxtLink :to="`/movies/${movie.imdbid}`" class="block group h-full"> <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl dark:border dark:border-gray-700 transition-all duration-300 ease-in-out overflow-hidden flex flex-col h-full">
+ <NuxtLink :to="`/movies/${movie.id}`" class="block group h-full"> <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl dark:border dark:border-gray-700 transition-all duration-300 ease-in-out overflow-hidden flex flex-col h-full">
       
       <img
         v-if="movie.image"
@@ -34,7 +34,8 @@
 // Film tipini import etmek iyi bir pratiktir
 // import type { Movie } from '~/composables/useImdb'; // veya '~/types/movie';
 
-interface Movie { // Şimdilik burada basit bir interface tanımlayalım, daha merkezi bir yerden de alınabilir
+interface Movie {
+  id: number;
   imdbid: string;
   image?: string;
   thumbnail?: string;
@@ -48,8 +49,8 @@ const props = defineProps<{
   movie: Movie;
 }>();
 
-// HER KART OLUŞTURULDUĞUNDA IMDb ID'SİNİ KONSOLA YAZDIRALIM
-console.log('[MovieCard] Props received - Title:', props.movie.title, 'IMDb ID:', props.movie.imdbid);
+// Kart oluştuğunda film ID'sini konsola yazdıralım
+console.log('[MovieCard] Props received - Title:', props.movie.title, 'ID:', props.movie.id);
 
 const onImageError = (event: Event) => {
    console.warn(`Image failed to load: ${props.movie.image}`);
