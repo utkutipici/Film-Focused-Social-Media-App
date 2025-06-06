@@ -12,8 +12,8 @@
     </div>
     
     <div v-else-if="movies && movies.length">
-      <div class="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4"> 
-        <MovieCard v-for="movie in movies" :key="movie.imdbid" :movie="movie" />
+      <div class="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+        <MovieCard v-for="movie in movies" :key="movie.id" :movie="movie" />
       </div>
     </div>
     
@@ -27,26 +27,15 @@
 <script setup lang="ts">
 // Update the path below if your MovieCard.vue is in a different folder or has different casing
 import MovieCard from '../../components/MovieCard.vue';
-import { useImdb } from '~/composables/useImdb'; // Composable yolunu kontrol edin
+import useMoviesApi from '~/composables/useMoviesApi'
 
-// Film tipini composable'dan veya ayrı bir tipler dosyasından import edebilirsiniz
-// import type { Movie } from '~/composables/useImdb'; // veya '~/types/movie';
+const { getAllMovies } = useMoviesApi();
 
-const { fetchTop100Movies } = useImdb();
-
-// useAsyncData veya useFetch Nuxt 3'te veri çekmek için idealdir
 const { data: movies, pending, error } = await useAsyncData(
   'top100Movies',
   async () => {
-    const fetchedMovies = await fetchTop100Movies();
-    // API bazen beklediğimizden farklı bir formatta veri dönebilir, burada kontrol edebilirsiniz.
-    // Örneğin, API bir obje içinde { results: [...] } gibi dönerse: return fetchedMovies.results;
+    const fetchedMovies = await getAllMovies();
     return fetchedMovies;
-  },
-  {
-    // Veriyi sunucu tarafında bir kere çekip istemci tarafında tekrar çekmemek için
-    // veya belirli aralıklarla tazelemek için ayarlar eklenebilir.
-    // immediate: true, // Varsayılan olarak true
   }
 );
 
