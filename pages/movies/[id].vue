@@ -97,38 +97,22 @@
 
 <script setup lang="ts">
 // YUKARIDAKİ DEBUG LOGLAMALI SCRIPT SETUP KISMINI BURAYA KOYUN
-import { useImdb } from '~/composables/useImdb';
+import useMoviesApi from '~/composables/useMoviesApi'
 
 const route = useRoute();
 const movieId = computed(() => route.params.id as string);
 
-const { fetchTop100Movies } = useImdb();
+const { getMovieById } = useMoviesApi();
 
 const { data: movieData, pending, error: asyncError } = await useAsyncData(
   `movie-${movieId.value}`,
   async () => {
-    console.log(`[MovieDetail] Fetching data for movieId: ${movieId.value}`);
-    const allMovies = await fetchTop100Movies();
-
-    if (allMovies && allMovies.length > 0) {
-      console.log(`[MovieDetail] Fetched ${allMovies.length} movies from Top 100 list.`);
-      const foundMovie = allMovies.find(movie => movie.imdbid === movieId.value);
-      if (foundMovie) {
-        console.log(`[MovieDetail] Movie found: ${foundMovie.title}`);
-        return foundMovie;
-      } else {
-        console.error(`[MovieDetail] Movie with imdbid "${movieId.value}" NOT FOUND in the fetched list.`);
-        return null;
-      }
-    } else {
-      console.error(`[MovieDetail] fetchTop100Movies returned null or an empty list.`);
-      return null;
-    }
+    return await getMovieById(movieId.value)
   },
   {
     watch: [movieId]
   }
-);
+)
 
 console.log('[MovieDetail] Pending state:', pending.value);
 console.log('[MovieDetail] Async error state:', asyncError.value);
