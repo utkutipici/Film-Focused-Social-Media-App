@@ -46,46 +46,47 @@
     </div>
 </template>
 <script setup>
-const darkMode = ref(false)
-const { useAuthUser, initAuth, useAuthLoading, logout } = useAuth()
-const isAuthLoading = useAuthLoading()
-const { closePostTweetModal, usePostTweetModal, openPostTweetModal, useReplyTweet } = useTweets()
-const user = useAuthUser()
+import { ref, onBeforeMount } from 'vue';
 
-const postTweetModal = usePostTweetModal()
-const emitter = useEmitter()
-const replyTweet = useReplyTweet()
+// --- Dark Mode ---
+const darkMode = ref(false);
 
-emitter.$on('replyTweet', (tweet) => {
-    openPostTweetModal(tweet)
-})
+// --- Auth ---
+// Yeni useAuth yapısından ihtiyacımız olan her şeyi tek seferde alıyoruz
+// "loading" state'ini bu dosyada "isAuthLoading" olarak yeniden isimlendiriyoruz
+const { user, initAuth, loading: isAuthLoading, logout } = useAuth();
 
-emitter.$on('toggleDarkMode', () => {
-    darkMode.value = !darkMode.value
-})
+// --- Tweet Modal ---
+const { closePostTweetModal, usePostTweetModal, openPostTweetModal, useReplyTweet } = useTweets();
+const postTweetModal = usePostTweetModal();
+const replyTweet = useReplyTweet();
 
+// --- Event Emitter ---
+const emitter = useEmitter();
+emitter.$on('replyTweet', (tweet) => openPostTweetModal(tweet));
+emitter.$on('toggleDarkMode', () => darkMode.value = !darkMode.value);
+
+// --- Lifecycle Hooks ---
+// Bileşen yüklenmeden önce kimlik doğrulama kontrolünü başlat
 onBeforeMount(() => {
-    initAuth()
-})
+    initAuth();
+});
 
+// --- Functions ---
 function handleFormSuccess(tweet) {
-    closePostTweetModal()
-
-    navigateTo({
-        path: `/status/${tweet.id}`
-    })
+    closePostTweetModal();
+    navigateTo({ path: `/status/${tweet.id}` });
 }
 
 function handleModalClose() {
-    closePostTweetModal()
+    closePostTweetModal();
 }
 
 function handleOpenTweetModal() {
-    openPostTweetModal(null)
+    openPostTweetModal(null);
 }
 
 function handleUserLogout() {
-    logout()
+    logout();
 }
-
 </script>

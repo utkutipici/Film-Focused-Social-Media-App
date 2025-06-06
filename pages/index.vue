@@ -16,32 +16,31 @@
     </div>
 </template>
 <script setup>
-const { twitterBorderColor } = useTailwindConfig()
-const { getTweets } = useTweets()
+import { ref, onBeforeMount } from 'vue';
 
-const loading = ref(false)
-const homeTweets = ref([])
-const { useAuthUser } = useAuth()
+const { twitterBorderColor } = useTailwindConfig();
+const { getTweets } = useTweets();
+// Sadece user bilgisine ihtiyacımız var, onu da useAuth'tan alıyoruz
+const { user } = useAuth();
 
-const user = useAuthUser()
+const loading = ref(false);
+const homeTweets = ref([]);
 
 onBeforeMount(async () => {
-    loading.value = true
+    loading.value = true;
     try {
-        const { tweets } = await getTweets()
-
-        homeTweets.value = tweets
+        const { tweets } = await getTweets();
+        homeTweets.value = tweets;
     } catch (error) {
-        console.log(error)
+        console.log(error);
     } finally {
-        loading.value = false
+        loading.value = false;
     }
-})
+});
 
 function handleFormSuccess(tweet) {
     navigateTo({
         path: `/status/${tweet.id}`
-    })
+    });
 }
-
 </script>

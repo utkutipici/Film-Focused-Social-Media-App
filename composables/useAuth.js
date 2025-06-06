@@ -1,130 +1,96 @@
-import {jwtDecode} from "jwt-decode"
+import { ref,  } from 'vue';
 
-export default () => {
-    const useAuthToken = () => useState('auth_token')
-    const useAuthUser = () => useState('auth_user')
-    const useAuthLoading = () => useState('auth_loading', () => true)
+export default function useAuth() {
+    //
+    // --- STATE (Durum Yönetimi) ---
+    //
+    // Kullanıcı bilgisini tutan global state. Başlangıçta null.
+    const user = useState('auth_user', () => null);
+    // Kimlik doğrulama işleminin yüklenme durumunu tutan global state.
+    // Sayfa ilk yüklendiğinde kontrol başlayacağı için başlangıçta 'true' olmalı.
+    const loading = useState('auth_loading', () => true);
 
-    const setToken = (newToken) => {
-        const authToken = useAuthToken()
-        authToken.value = newToken
-    }
+    //
+    // --- FUNCTIONS (Fonksiyonlar) ---
+    //
 
-    const setUser = (newUser) => {
-        const authUser = useAuthUser()
-        authUser.value = newUser
-    }
-
-    const setIsAuthLoading = (value) => {
-        const authLoading = useAuthLoading()
-        authLoading.value = value
-    }
-
-    const login = ({ username, password }) => {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const data = await $fetch('/api/auth/login', {
-                    method: 'POST',
-                    body: {
-                        username,
-                        password
-                    }
-                })
-
-                setToken(data.access_token)
-                setUser(data.user)
-
-                resolve(true)
-            } catch (error) {
-                reject(error)
+    // UYGULAMA BAŞLANGICINDA KULLANICI KONTROLÜ
+    // Bu fonksiyon, tarayıcıda kayıtlı token'ı kontrol edip kullanıcıyı getirmeye çalışır.
+    const initAuth = async () => {
+        loading.value = true;
+        try {
+            // Tarayıcıdaki token'ı al
+            const tokenValue = localStorage.getItem('auth_token');
+            if (!tokenValue) {
+                return; // Token yoksa işlemi bitir.
             }
-        })
-    }
 
-    const refreshToken = () => {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const data = await $fetch('/api/auth/refresh')
+            // Token ile '/api/users/me' endpoint'ine istek at
+            const data = await $fetch('/api/users/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${tokenValue}`
+                }
+            });
 
-                setToken(data.access_token)
-                resolve(true)
-            } catch (error) {
-                reject(error)
+            if (data.success) {
+                user.value = data.data; // Kullanıcı bilgisini state'e ata
             }
-        })
-    }
 
-    const getUser = () => {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const data = await useFetchApi('/api/auth/user')
-
-                setUser(data.user)
-                resolve(true)
-            } catch (error) {
-                reject(error)
-            }
-        })
-    }
-
-    const reRefreshAccessToken = () => {
-        const authToken = useAuthToken()
-
-        if (!authToken.value) {
-            return
+        } catch (error) {
+            // Token geçersizse veya bir hata olursa kullanıcıyı ve token'ı temizle
+            user.value = null;
+            localStorage.removeItem('auth_token');
+            console.error("initAuth error:", error);
+        } finally {
+            loading.value = false;
         }
+    };
 
-        const jwt = jwtDecode(authToken.value)
+    // KULLANICI GİRİŞİ
+    const login = async ({ username, password }) => {
+        loading.value = true;
+        try {
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
 
-        const newRefreshTime = jwt.exp - 60000
+            const response = await $fetch('/api/users/login', {
+                method: 'POST',
+                body: formData
+            });
 
-        setTimeout(async () => {
-            await refreshToken()
-            reRefreshAccessToken()
-        }, newRefreshTime);
-    }
-
-    const initAuth = () => {
-        return new Promise(async (resolve, reject) => {
-            setIsAuthLoading(true)
-            try {
-                await refreshToken()
-                await getUser()
-
-                reRefreshAccessToken()
-
-                resolve(true)
-            } catch (error) {
-                console.log(error)
-                reject(error)
-            } finally {
-                setIsAuthLoading(false)
+            if (response.success) {
+                // Token'ı localStorage'a kaydet
+                localStorage.setItem('auth_token', response.access_token);
+                // Kullanıcı verisini almak için initAuth'u yeniden çalıştır
+                await initAuth();
+                return response;
+            } else {
+                throw new Error(response.message || 'Giriş başarısız oldu');
             }
-        })
-    }
+        } catch (error) {
+            console.error('Giriş sırasında hata:', error);
+            throw error;
+        } finally {
+            loading.value = false;
+        }
+    };
 
+    // KULLANICI ÇIKIŞI
     const logout = () => {
-        return new Promise(async (resolve, reject) => {
-            try {
-                await useFetchApi('/api/auth/logout', {
-                    method: 'POST'
-                })
+        user.value = null;
+        localStorage.removeItem('auth_token');
+        // Giriş sayfasına yönlendir
+        navigateTo('/auth'); 
+    };
 
-                setToken(null)
-                setUser(null)
-                resolve()
-            } catch (error) {
-                reject(error)
-            }
-        })
-    }
-
+    // Dışarıya açılacak tüm state ve fonksiyonlar
     return {
+        user,
+        loading,
         login,
-        useAuthUser,
-        useAuthToken,
         initAuth,
-        useAuthLoading,
         logout
-    }
+    };
 }
