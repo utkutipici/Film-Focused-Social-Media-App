@@ -107,11 +107,14 @@ const { getMovieById } = useMoviesApi();
 const { data: movieData, pending, error: asyncError } = await useAsyncData(
   `movie-${movieId.value}`,
   async () => {
+
     const movie = await getMovieById(movieId.value)
     if (movie && typeof movie.genre === 'string') {
       movie.genre = movie.genre.split(',').map((g) => g.trim())
     }
     return movie
+    
+
   },
   {
     watch: [movieId]
